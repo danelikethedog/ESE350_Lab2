@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include "uart.h"
 
-unsigned int pinbRead, dif, left_edge, right_edge, overflows;
-unsigned long pulse_width;
+unsigned int pinbRead, left_edge, right_edge, overflows;
+unsigned long pulse_width, dif;
 
 ISR(TIMER1_CAPT_vect) {
 	
@@ -21,9 +21,10 @@ ISR(TIMER1_CAPT_vect) {
 	while(pinbRead == 1) {
 		pinbRead = PINB & 0x01;
 		if (pinbRead == 1) {
-			PORTB |= 0x20;
+			PORTB |= 0x30;
 		} else {
-			PORTB &= 0x00;
+			PORTB &= ~(1 << 5);
+			PORTB &= ~(1 << 4);
 		}
 	}
 
@@ -34,7 +35,7 @@ ISR(TIMER1_CAPT_vect) {
 	}
 
 	dif = right_edge - left_edge;
-	pulse_width = (long)overflows * 0.00002133 + (long)dif;
+	pulse_width = (long)overflows * 65536 + dif;
 	
 }
 
@@ -47,13 +48,15 @@ int main(void)
 {
 	overflows = 0;
 	left_edge = 0;
+	right_edge = 0;
 	pulse_width = 0;
+	dif = 0;
 
 	DDRB = 0xFE;
 
-	PORTB = 0x10;
+	PORTB = 0x00;
 
-	TCCR1B |= 0x41;
+	TCCR1B |= 0x42;
 
 	TIMSK1 = 0x20;
 
@@ -61,17 +64,21 @@ int main(void)
 
 	uart_init();
 
-	uart_putchar('s', &uart_out);
-
 	while(1) {
 
-		if (pulse_width > 1407 && pulse_width < 9376) {
+		printf(" %i \n", pulse_width);
+
+		if (pulse_width > 60000 && pulse_width < 400000) {
+			PORTB |= 0x10;
 			uart_putchar('.', &uart_out);
-		} else if (pulse_width > 9376 && pulse_width < 18752) {
+			overflows = 0;
+		} else if (pulse_width > 400000 && pulse_width < 800000) {
 			uart_putchar('-', &uart_out);
-		} else if (pulse_width > 18752) {
+			overflows = 0;
+		} else if (pulse_width > 800000) {
 			uart_putchar(' ', &uart_out);
-		}
+			overflows = 0;
+		} 
 	}
 
 
