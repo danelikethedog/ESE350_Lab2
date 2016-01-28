@@ -64,15 +64,15 @@ char getChar() {
 
 		//Determine kind of incoming and turn on 7 Segment display
 		if (pulse_width > 30 && pulse_width < 200) {
-			uart_putchar('.', &uart_out);
+			//uart_putchar('.', &uart_out);
 			PORTB &= ~(1 << 4);
 			return '.';
 		} else if (pulse_width >= 200 && pulse_width < 399) {
-			uart_putchar('-', &uart_out);
+			//uart_putchar('-', &uart_out);
 			PORTB &= ~(1 << 3);
 			return '-';
 		} else if (pulse_width >= 400) {
-			uart_putchar(' ', &uart_out);
+			//uart_putchar(' ', &uart_out);
 			PORTB |= 0x18;
 			return ' ';
 		}
@@ -81,8 +81,7 @@ char getChar() {
 
 }
 
-int main(void)
-{
+int main(void) {
 	
 
 	DDRB = 0xFE;
@@ -100,26 +99,176 @@ int main(void)
 	while(1) {
 		char newChar = getChar();
 
+		//Start with a Dot
 		if(newChar == '.') {
 			newChar = getChar();
 			if(newChar == '.') { // ..
 				newChar = getChar();
-			} else if(newChar == '-') { //.-
+				if(newChar == '.') { // ...
+					newChar = getChar();
+					if(newChar == '-') { //...-
+						newChar = getChar();
+						if(newChar == ' ') {
+							uart_putchar('V', &uart_out);
+						} else if(newChar == '-') { //...--
+							uart_putchar('3', &uart_out);
+						} 
+					} else if(newChar == '.') { //....
+						newChar == getChar();
+						if(newChar == ' ') {
+							uart_putchar('H', &uart_out);
+						} else if(newChar == '-') { //....-
+							uart_putchar('4', &uart_out);
+						} else { //.....
+							uart_putchar('5', &uart_out);
+						}
+					} else {
+						uart_putchar('S', &uart_out);
+					}
+				} else if(newChar == '-') { //..-
+					newChar = getChar();
+					if(newChar == '.') { // ..-.
+						uart_putchar('F', &uart_out);
+						
+					} else if(newChar == ' ')  {
+						uart_putchar('U', &uart_out);
+						
+					} else { //..--
+						newChar = getChar();
+						if(newChar == '-') { //..---
+							uart_putchar('2', &uart_out);
+							
+						}
+					}
+				} else { // ..
+					uart_putchar('I', &uart_out);
+				}
+			 } else if(newChar == '-') { //.-
 				newChar = getChar();
 				if(newChar == '.') { //.-.
-
+					newChar = getChar();
+					if(newChar == '.') { // .-..
+						uart_putchar('L',&uart_out);
+					}
+					else if (newChar == ' ') { // .-.
+						uart_putchar('R', &uart_out); 
+					}
 				} else if(newChar == '-') { //.--
-
+					newChar = getChar();
+					if(newChar == '-') { //.---
+						newChar = getChar();
+						if(newChar == '-') { //.----
+							uart_putchar('1', &uart_out);
+						} else {
+							uart_putchar('J', &uart_out);
+							
+						}
+					} else if(newChar == '.') { // .--.
+						uart_putchar('P',&uart_out);
+						
+					} else { 
+						uart_putchar('W', &uart_out);
+						
+					}
 				} else { //.-
 					uart_putchar('A',&uart_out);
+					
 				}
 			} else {
 				uart_putchar('E', &uart_out);
+				
 			}
+
+		//Start With a Dash
 		} else if(newChar == '-') {
 			newChar = getChar();
+			if(newChar == '.') { //-.
+				newChar = getChar();
+				if(newChar == '.') { //-..
+					newChar = getChar();
+					if(newChar == '-') { //-..-
+						uart_putchar('X', &uart_out);
+						
+					} else if(newChar == '.') { //-...
+						newChar = getChar();
+						if(newChar == ' ') {
+							uart_putchar('B', &uart_out);
+							
+						} else if(newChar == '.') { //-....
+							uart_putchar('6', &uart_out);
+							
+						}
+					} else {
+						uart_putchar('D', &uart_out);
+						
+					}
+				} else if(newChar == '-') { //-.-
+					newChar = getChar();
+					if(newChar == '.') { //-.-.
+						uart_putchar('C', &uart_out);
+						
+					} else if(newChar == '-') { //-.-- 
+						uart_putchar('Y', &uart_out);
+						
+					} else { //-.-
+						uart_putchar('K', &uart_out);
+						
+					}
+				} else { //-.
+					uart_putchar('N',&uart_out);
+					
+				}
+			} else if(newChar == '-') { //--
+				newChar = getChar();
+				if(newChar == '-') { //---
+					newChar = getChar();
+					if(newChar == ' ') {
+						uart_putchar('O', &uart_out);
+						
+					} else if(newChar == '.') { //---.
+						newChar = getChar();
+						if(newChar == '.') { //---..
+							uart_putchar('8', &uart_out);
+							
+						}
+					} else { //----
+						newChar = getChar();
+						if(newChar == '.') { //----.
+							uart_putchar('9', &uart_out);
+							
+						} else if(newChar == '-') { //-----
+							uart_putchar('0', &uart_out);
+							
+						} 
+					}
+				} else if(newChar == '.') { //--.
+					newChar = getChar();
+					if(newChar == '.') { //--..
+						newChar = getChar();
+						if(newChar == ' ') {
+							uart_putchar('Z', &uart_out);
+							
+						} else if(newChar == '.') { //--...
+							uart_putchar('7', &uart_out);
+							
+						}
+					} else if(newChar == '-') { //--.-
+						uart_putchar('Q', &uart_out);
+						
+					} else { //--.
+						uart_putchar('G', &uart_out);
+						
+					}
+				} else { //--
+					uart_putchar('M',&uart_out);
+					
+				}
+			} else { // -
+				uart_putchar('T', &uart_out);
+				
+			}
 		} else { // newChar == ' '
-			continue;
+			uart_putchar(' ', &uart_out);
 		}
 	 
 	}
