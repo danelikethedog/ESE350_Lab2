@@ -15,24 +15,7 @@ ISR(TIMER1_OVF_vect) {
 	overflows++;
 }
 
-
-int main(void)
-{
-	
-
-	DDRB = 0xFE;
-
-	PORTB = 0x18;
-
-	TCCR1B |= 0x41;
-
-	TIMSK1 |= 0x20;
-
-	uart_init();
-
-	sei();
-
-	while(1) {
+char getChar() {
 
 		//printf("Pulse Width %i\n", pulse_width);
 		//printf("Overflows %i\n", overflows);
@@ -83,12 +66,60 @@ int main(void)
 		if (pulse_width > 30 && pulse_width < 200) {
 			uart_putchar('.', &uart_out);
 			PORTB &= ~(1 << 4);
+			return '.';
 		} else if (pulse_width >= 200 && pulse_width < 399) {
 			uart_putchar('-', &uart_out);
 			PORTB &= ~(1 << 3);
+			return '-';
 		} else if (pulse_width >= 400) {
 			uart_putchar(' ', &uart_out);
 			PORTB |= 0x18;
+			return ' ';
+		}
+
+
+
+}
+
+int main(void)
+{
+	
+
+	DDRB = 0xFE;
+
+	PORTB = 0x18;
+
+	TCCR1B |= 0x41;
+
+	TIMSK1 |= 0x20;
+
+	uart_init();
+
+	sei();
+
+	while(1) {
+		char newChar = getChar();
+
+		if(newChar == '.') {
+			newChar = getChar();
+			if(newChar == '.') { // ..
+				newChar = getChar();
+			} else if(newChar == '-') { //.-
+				newChar = getChar();
+				if(newChar == '.') { //.-.
+
+				} else if(newChar == '-') { //.--
+
+				} else { //.-
+					uart_putchar('A',&uart_out);
+				}
+			} else {
+				uart_putchar('E', &uart_out);
+			}
+		} else if(newChar == '-') {
+			newChar = getChar();
+		} else { // newChar == ' '
+			continue;
 		}
 	 
 	}
