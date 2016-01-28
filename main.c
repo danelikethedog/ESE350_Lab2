@@ -96,8 +96,10 @@ int main(void) {
 
 	sei();
 
+	char newChar;
+
 	while(1) {
-		char newChar = getChar();
+		newChar = getChar();
 
 		//Start with a Dot
 		if(newChar == '.') {
@@ -114,12 +116,12 @@ int main(void) {
 							uart_putchar('3', &uart_out);
 						} 
 					} else if(newChar == '.') { //....
-						newChar == getChar();
+						newChar = getChar();
 						if(newChar == ' ') {
 							uart_putchar('H', &uart_out);
 						} else if(newChar == '-') { //....-
 							uart_putchar('4', &uart_out);
-						} else { //.....
+						} else if(newChar == '.') { //.....
 							uart_putchar('5', &uart_out);
 						}
 					} else {
