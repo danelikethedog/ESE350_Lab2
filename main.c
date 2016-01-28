@@ -4,39 +4,11 @@
 #include <stdio.h>
 #include "uart.h"
 
-unsigned int pinbRead, left_edge, right_edge, overflows;
-unsigned long pulse_width, dif;
+unsigned int pinbRead, left_edge, right_edge, overflows, pulse_width;
+unsigned long dif;
 
 ISR(TIMER1_CAPT_vect) {
-	
-	pinbRead = PINB & 0x01;
-
-	overflows = 0;
-
-	//set the timer overflow interrupt and get left edge
-	TIMSK1 |= 0x21;
-	left_edge = ICR1;
-
-	//while loop while key is depressed w/ led on
-	while(pinbRead == 1) {
-		pinbRead = PINB & 0x01;
-		if (pinbRead == 1) {
-			PORTB |= 0x30;
-		} else {
-			PORTB &= ~(1 << 5);
-			PORTB &= ~(1 << 4);
-		}
-	}
-
-
-	right_edge = ICR1;
-	if (right_edge < left_edge) {
-		overflows--;
-	}
-
-	dif = right_edge - left_edge;
-	pulse_width = (long)overflows * 65536 + dif;
-	
+	PORTB ^= 0x20;
 }
 
 ISR(TIMER1_OVF_vect) {
@@ -46,39 +18,79 @@ ISR(TIMER1_OVF_vect) {
 
 int main(void)
 {
-	overflows = 0;
-	left_edge = 0;
-	right_edge = 0;
-	pulse_width = 0;
-	dif = 0;
+	
 
 	DDRB = 0xFE;
 
-	PORTB = 0x00;
+	PORTB = 0x18;
 
-	TCCR1B |= 0x42;
+	TCCR1B |= 0x41;
 
-	TIMSK1 = 0x20;
-
-	sei();
+	TIMSK1 |= 0x20;
 
 	uart_init();
 
+	sei();
+
 	while(1) {
 
-		printf(" %i \n", pulse_width);
+		//printf("Pulse Width %i\n", pulse_width);
+		//printf("Overflows %i\n", overflows);
 
-		if (pulse_width > 60000 && pulse_width < 400000) {
-			PORTB |= 0x10;
+		overflows = 0;
+		left_edge = 0;
+		right_edge = 0;
+		pulse_width = 0;
+		dif = 0;
+
+		TCCR1B |= 0x40;
+
+		
+		
+		//Turn on the overflow interupt
+		
+		//Input High Sensitive
+		TIFR1 |= 0x20;
+
+		//wait for input flag to be tripped
+		while(!(TIFR1 & 0x20));	
+
+		PORTB |= 0x18;
+
+		//turn on overflows
+		TIMSK1 |= 0x21;
+
+		//Hold while button is pressed down
+		pinbRead = PINB & 0x01;
+		while(pinbRead == 1) {
+ 			pinbRead = PINB & 0x01;
+ 			if(pinbRead == 1) {
+	 			PORTB |= 0x20;
+	 		} else {
+	 			PORTB &= ~(1 << 5);
+	 		}
+ 		}
+
+
+		//Turn Off 7 Segment Lines
+		TIMSK1 &= ~(1 << 0);
+		TIMSK1 &= ~(1 << 5);
+
+
+		pulse_width = overflows * 4;
+
+		//Determine kind of incoming and turn on 7 Segment display
+		if (pulse_width > 30 && pulse_width < 200) {
 			uart_putchar('.', &uart_out);
-			overflows = 0;
-		} else if (pulse_width > 400000 && pulse_width < 800000) {
+			PORTB &= ~(1 << 4);
+		} else if (pulse_width >= 200 && pulse_width < 399) {
 			uart_putchar('-', &uart_out);
-			overflows = 0;
-		} else if (pulse_width > 800000) {
+			PORTB &= ~(1 << 3);
+		} else if (pulse_width >= 400) {
 			uart_putchar(' ', &uart_out);
-			overflows = 0;
-		} 
+			PORTB |= 0x18;
+		}
+	 
 	}
 
 
